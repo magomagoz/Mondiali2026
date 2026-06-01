@@ -193,7 +193,9 @@ iso_map = {
     'Curacao': 'cw', 'Capo Verde': 'cv', 'Giordania': 'jo', 'Haiti': 'ht',
     'Nuova Zelanda': 'nz', 'Panama': 'pa', 'Scozia': 'gb-sct', 'Iran': 'ir'
 }
-    
+
+import datetime # Assicurati di importare datetime in cima allo script
+
 def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
@@ -221,6 +223,14 @@ def genera_pdf():
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
 
+        # Aggiunta Data e Ora dell'analisi
+    data_analisi = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
+    pdf.set_text_color(0, 0, 0)
+    pdf.line(10, 45, 200, 45)
+    pdf.ln(10)
+
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 10, "Fattore di Forma Dinamico Attivato", ln=True, align='C')
     
@@ -236,6 +246,24 @@ def genera_pdf():
     pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
+
+    # --- 2. DATI MATCH E STRATEGIA ---
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
+    
+    # Nuova sezione: Modificatori Strategici
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(95, 8, f"Fattore Motivazione {casa}: x{mod_motivazione_casa}")
+    pdf.cell(95, 8, f"Fattore Motivazione {ospite}: x{mod_motivazione_ospite}", ln=True)
+    pdf.ln(5)
+
+    # --- 3. RISULTATI STATISTICI ---
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
+    pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
+    pdf.ln(5)
     
     # --- 2. CREAZIONE DEL GRAFICO PER IL PDF ---
     fig, ax = plt.subplots(figsize=(4, 3))
