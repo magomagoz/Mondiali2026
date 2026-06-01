@@ -137,4 +137,60 @@ st.write("---")
 st.subheader(f"🏟️ Pronostico: {r_casa['flag']} {casa} vs {ospite} {r_ospite['flag']}")
 
 # Avviso visivo se il ranking è modificato dallo stato di forma
-if stats_torneo[casa]['p'] > 0 or
+if stats_torneo[casa]['p'] > 0 or stats_torneo[ospite]['p'] > 0:
+    st.info("📈 Nota dello Scout: Questo calcolo include il modificatore sullo stato di forma aggiornato dai risultati reali precedenti!")
+
+c1, c2 = st.columns(2)
+with c1: st.metric(label=f"Gol Attesi {casa} (λ)", value=f"{lambda_casa:.2f}")
+with c2: st.metric(label=f"Gol Attesi {ospite} (λ)", value=f"{lambda_ospite:.2f}")
+
+# Algoritmo di Poisson
+match_counts = {}
+for gc in range(6):
+    for go in range(6):
+        prob = ((lambda_casa**gc * math.exp(-lambda_casa)) / math.factorial(gc)) * \
+               ((lambda_ospite**go * math.exp(-lambda_ospite)) / math.factorial(go)) * 100
+        match_counts[f"{gc} - {go}"] = prob
+
+top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
+
+col_s, col_d = st.columns(2)
+with col_s:
+    for pos, (res, pr) in enumerate(top_5, 1):
+        st.metric(label=f"{pos}° Opzione Risultato", value=res, delta=f"{pr:.2f}%")
+with col_d:
+    st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
+
+# 6. Esportazione Report PDF Delphi Predictor
+st.write("---")
+st.subheader("📄 Esporta Documento Tecnico")
+
+def genera_pdf():
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(190, 10, "DELPHI PREDICTOR REPORT", ln=True, align='C')
+    pdf.set_font("Arial", 'I', 10)
+    pdf.cell(190, 10, "Fattore di Forma Dinamico Attivato", ln=True, align='C')
+    pdf.line(10, 30, 200, 30)
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 14)
+    pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
+    pdf.ln(5)
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
+    pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(190, 10, "TOP 5 RISULTATI ESATTI CALCOLATI:", ln=True)
+    pdf.set_font("Arial", '', 12)
+    for pos, (res, pr) in enumerate(top_5, 1):
+        pdf.cell(190, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
+    return pdf.output(dest="S").encode("latin1")
+
+st.download_button(
+    label="⬇️ Scarica Scheda Tecnica PDF",
+    data=genera_pdf(),
+    file_name=f"Delphi_Live_{casa}_{ospite}.pdf",
+    mime="application/pdf"
+)
