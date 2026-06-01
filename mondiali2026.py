@@ -10,7 +10,7 @@ import os
 
 st.set_page_config(page_title="Delphi Predictor Live", page_icon="⚽", layout="wide")
 
-st.image("banner.png")
+st.image("banner.png", layout="wide")
 #st.title("🏆 WC 2026 - Delphi Predictor con Ranking Mobile")
 st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
 
