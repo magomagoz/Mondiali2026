@@ -113,7 +113,7 @@ for team, s in stats_torneo.items():
         scout_ratings[team]['difesa'] = max(0.3, (alpha * perf_def) + ((1 - alpha) * scout_ratings_base[team]['difesa']))
 
 # 4. Sidebar: Selezione Match per il Pronostico
-st.sidebar.header("🗓️ Seleziona Match da Analizzare")
+st.sidebar.header("🗓️ Seleziona Match")
 fase = st.sidebar.radio("Fase del Torneo:", ["Fase a Gironi", "Fasi Finali (Eliminazione)"])
 
 if fase == "Fase a Gironi":
@@ -159,12 +159,13 @@ for gc in range(6):
 
 top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
-col_s, col_d = st.columns(2)
-with col_s:
+st.divider()
+st.columns(5)
     for pos, (res, pr) in enumerate(top_5, 1):
         st.metric(label=f"{pos}° Opzione Risultato", value=res, delta=f"{pr:.2f}%")
-with col_d:
-    st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
+
+st.divider()
+st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
 
 # 6. Esportazione Report PDF Delphi Predictor
 st.write("---")
