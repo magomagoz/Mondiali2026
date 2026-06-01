@@ -202,7 +202,7 @@ def genera_pdf():
 
     # --- 1. INTESTAZIONE E LOGHI ---
     pdf.set_fill_color(0, 96, 156) 
-    pdf.rect(0, 0, 150, 40, 'F')
+    pdf.rect(0, 0, 240, 30, 'F')
         
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
