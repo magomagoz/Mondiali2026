@@ -161,7 +161,7 @@ top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
 st.divider()
 st.columns(5)
-for pos, (res, pr) in enumerate(top_5, 1):
+for pos, (res, pr) in enumerate(top_5, 5):
     st.metric(label=f"{pos}° Opzione Risultato", value=res, delta=f"{pr:.2f}%")
 
 st.divider()
