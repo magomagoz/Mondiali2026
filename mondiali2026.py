@@ -204,54 +204,25 @@ def genera_pdf():
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 210, 40, 'F')
     
-    # Procedura per scaricare e inserire le bandiere reali
-    try:
-        url_casa = f"https://flagcdn.com/w80/{iso_map.get(casa, 'un')}.png"
-        url_ospite = f"https://flagcdn.com/w80/{iso_map.get(ospite, 'un')}.png"
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_casa:
-            urllib.request.urlretrieve(url_casa, f_casa.name)
-            pdf.image(f_casa.name, 15, 10, 20)
-            
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_ospite:
-            urllib.request.urlretrieve(url_ospite, f_ospite.name)
-            pdf.image(f_ospite.name, 175, 10, 20)
-    except Exception:
-        pass # Se manca la connessione o l'immagine, crea comunque il PDF
+    # [Mantieni qui il tuo blocco try/except originale per le bandiere]
+    # ...
     
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
-
-        # Aggiunta Data e Ora dell'analisi
+    
     data_analisi = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
-    pdf.set_text_color(0, 0, 0)
-    pdf.line(10, 45, 200, 45)
+    
+    # --- 2. TITOLO MATCH (UNICO) ---
     pdf.ln(10)
-
-    pdf.set_font("Arial", 'I', 10)
-    pdf.cell(190, 10, "Fattore di Forma Dinamico Attivato", ln=True, align='C')
-    
     pdf.set_text_color(0, 0, 0)
-    pdf.line(10, 45, 200, 45)
-    pdf.ln(15)
-    
-    pdf.set_font("Arial", 'B', 14)
+    pdf.set_font("Arial", 'B', 16)
     pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
     pdf.ln(5)
-    
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
-    pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
-    pdf.ln(10)
 
-    # --- 2. DATI MATCH E STRATEGIA ---
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
-    
-    # Nuova sezione: Modificatori Strategici
+    # --- 3. PARAMETRI E RISULTATI ---
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
     pdf.set_font("Arial", '', 11)
@@ -259,40 +230,37 @@ def genera_pdf():
     pdf.cell(95, 8, f"Fattore Motivazione {ospite}: x{mod_motivazione_ospite}", ln=True)
     pdf.ln(5)
 
-    # --- 3. RISULTATI STATISTICI ---
     pdf.set_font("Arial", '', 12)
     pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
-    pdf.ln(5)
+    pdf.ln(10)
     
-    # --- 2. CREAZIONE DEL GRAFICO PER IL PDF ---
+    # --- 4. CREAZIONE GRAFICO ---
     fig, ax = plt.subplots(figsize=(4, 3))
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
     ax.bar(res_labels, res_probs, color='#00609c')
-    ax.set_ylabel('Probabilità (%)')
     ax.set_title('Distribuzione Risultati')
     plt.tight_layout()
     
-    # Salva il grafico temporaneamente
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_chart:
         plt.savefig(f_chart.name, format="png")
         chart_path = f_chart.name
     plt.close(fig)
 
-    # --- 3. AFFIANCAMENTO TESTO E GRAFICO ---
+    # --- 5. TOP 5 E GRAFICO AFFIANCATI ---
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(95, 10, "TOP 5 RISULTATI ESATTI:", ln=False)
-    pdf.cell(95, 10, "GRAFICO PROBABILITA':", ln=True)
+    pdf.cell(95, 10, "TOP 5 RISULTATI ESATTI:", ln=True)
+    
+    y_start = pdf.get_y() # Salva la posizione Y dopo il titolo "TOP 5"
     
     pdf.set_font("Arial", '', 12)
-    y_start = pdf.get_y() # Salva la posizione Y attuale per allineare il grafico
-    
     for pos, (res, pr) in enumerate(top_5, 1):
-        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
+        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=False)
+        pdf.ln(10) # Vai a capo per la prossima riga del testo
         
-    # Inserisce il grafico a destra
-    pdf.image(chart_path, x=105, y=y_start, w=90)
+    # Inserisce il grafico a destra, partendo dalla Y salvata
+    pdf.image(chart_path, x=110, y=y_start, w=90)
     
     return pdf.output(dest="S").encode("latin1")
 
