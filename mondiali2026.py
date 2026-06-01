@@ -17,7 +17,7 @@ st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di fo
 # 1. Baseline Storica dello Scout
 scout_ratings_base = {
     'Argentina': {'attacco': 1.85, 'difesa': 0.60, 'flag': '🇦🇷'}, 'Francia': {'attacco': 1.90, 'difesa': 0.65, 'flag': '🇫🇷'},
-    'Brasile': {'attacco': 1.75, 'difesa': 0.70, 'flag': '🇧🇷'}, 'Inghilterra': {'attacco': 1.80, 'difesa': 0.65, 'flag': '🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
+    'Brasile': {'attacco': 1.75, 'difesa': 0.70, 'flag': '🇧🇷'}, 'Inghilterra': {'attacco': 1.80, 'difesa': 0.65, 'flag': '🇫🇷'},
     'Spagna': {'attacco': 1.70, 'difesa': 0.70, 'flag': '🇪🇸'}, 'Portogallo': {'attacco': 1.65, 'difesa': 0.75, 'flag': '🇵🇹'},
     'Olanda': {'attacco': 1.45, 'difesa': 0.80, 'flag': '🇳🇱'}, 'Germania': {'attacco': 1.50, 'difesa': 0.85, 'flag': '🇩🇪'},
     'Belgio': {'attacco': 1.40, 'difesa': 0.90, 'flag': '🇧🇪'}, 'Croazia': {'attacco': 1.30, 'difesa': 0.85, 'flag': '🇭🇷'},
