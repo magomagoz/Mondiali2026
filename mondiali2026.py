@@ -39,7 +39,7 @@ scout_ratings_base = {
     'Curacao': {'attacco': 0.75, 'difesa': 1.45, 'flag': '🇨🇼'}, 'Capo Verde': {'attacco': 0.80, 'difesa': 1.30, 'flag': '🇨🇻'},
     'Giordania': {'attacco': 0.80, 'difesa': 1.35, 'flag': '🇯🇴'}, 'Haiti': {'attacco': 0.75, 'difesa': 1.40, 'flag': '🇭🇹'},
     'Nuova Zelanda': {'attacco': 0.80, 'difesa': 1.25, 'flag': '🇳🇿'}, 'Panama': {'attacco': 0.85, 'difesa': 1.20, 'flag': '🇵🇦'},
-    'Scozia': {'attacco': 1.00, 'difesa': 1.05, 'flag': '🏴󠁧󠁢󠁳󠁣󠁴󠁿'}, 'Iran': {'attacco': 0.95, 'difesa': 1.00, 'flag': '🇮🇷'}
+    'Scozia': {'attacco': 1.00, 'difesa': 1.05, 'flag': '🇫🇷'}, 'Iran': {'attacco': 0.95, 'difesa': 1.00, 'flag': '🇮🇷'}
 }
 
 MEDIA_GOL_TORNEO = 1.35
