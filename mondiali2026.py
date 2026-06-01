@@ -261,7 +261,7 @@ def genera_pdf():
     y_start = pdf.get_y() # Salva la posizione Y dopo il titolo "TOP 5"
     
     for pos, (res, pr) in enumerate(top_5, 1):
-        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=False)
+        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
         pdf.ln(10) # Vai a capo per la prossima riga del testo
         
     # Inserisce il grafico a destra, partendo dalla Y salvata
