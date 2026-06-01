@@ -255,8 +255,8 @@ def genera_pdf():
     plt.close(fig)
 
     # --- 5. TOP 5 E GRAFICO AFFIANCATI ---
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(95, 10, "TOP 5 RISULTATI ESATTI:", ln=True)
+    pdf.set_font("Arial", 'B', 11)
+    pdf.cell(190, 8, "TOP 5 RISULTATI ESATTI:", ln=True)
     
     y_start = pdf.get_y() # Salva la posizione Y dopo il titolo "TOP 5"
     
