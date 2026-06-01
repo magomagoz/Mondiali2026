@@ -6,7 +6,8 @@ from fpdf import FPDF
 
 st.set_page_config(page_title="Delphi Predictor Live", page_icon="⚽", layout="wide")
 
-st.title("🏆 WC 2026 - Delphi Predictor con Ranking Mobile")
+st.image("banner.png")
+#st.title("🏆 WC 2026 - Delphi Predictor con Ranking Mobile")
 st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
 
 # 1. Baseline Storica dello Scout
@@ -163,7 +164,7 @@ with col_d:
 
 # 6. Esportazione Report PDF Delphi Predictor
 st.write("---")
-st.subheader("📄 Esporta Documento Tecnico")
+st.subheader("📄 Esporta Scheda Partita")
 
 def genera_pdf():
     pdf = FPDF()
@@ -189,8 +190,8 @@ def genera_pdf():
     return pdf.output(dest="S").encode("latin1")
 
 st.download_button(
-    label="⬇️ Scarica Scheda Tecnica PDF",
+    label="⬇️ Scarica PDF",
     data=genera_pdf(),
-    file_name=f"Delphi_Live_{casa}_{ospite}.pdf",
+    file_name=f"Pronostico_partita:_{casa}_{ospite}.pdf",
     mime="application/pdf"
 )
