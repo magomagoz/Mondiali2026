@@ -3,6 +3,10 @@ import math
 import pandas as pd
 from collections import defaultdict
 from fpdf import FPDF
+import matplotlib.pyplot as plt
+import tempfile
+import urllib.request
+import os
 
 st.set_page_config(page_title="Delphi Predictor Live", page_icon="⚽", layout="wide")
 
@@ -165,6 +169,22 @@ with col_d:
 # 6. Esportazione Report PDF Delphi Predictor
 st.write("---")
 st.subheader("📄 Esporta Scheda Partita")
+
+# Dizionario helper per scaricare le bandiere vere dal web
+iso_map = {
+    'Argentina': 'ar', 'Francia': 'fr', 'Brasile': 'br', 'Inghilterra': 'gb-eng',
+    'Spagna': 'es', 'Portogallo': 'pt', 'Olanda': 'nl', 'Germania': 'de',
+    'Belgio': 'be', 'Croazia': 'hr', 'Uruguay': 'uy', 'Marocco': 'ma',
+    'USA': 'us', 'Paraguay': 'py', 'Messico': 'mx', 'Canada': 'ca',
+    'Giappone': 'jp', 'Corea del Sud': 'kr', 'Svizzera': 'ch', 'Svezia': 'se',
+    'Ecuador': 'ec', 'Colombia': 'co', 'Senegal': 'sn', 'Costa d Avorio': 'ci',
+    'Egitto': 'eg', 'Turchia': 'tr', 'Cechia': 'cz', 'Austria': 'at',
+    'Norvegia': 'no', 'Bosnia': 'ba', 'Australia': 'au', 'Algeria': 'dz',
+    'Ghana': 'gh', 'Tunisia': 'tn', 'Arabia Saudita': 'sa', 'Qatar': 'qa',
+    'Iraq': 'iq', 'Sudafrica': 'za', 'Uzbekistan': 'uz', 'DR Congo': 'cd',
+    'Curacao': 'cw', 'Capo Verde': 'cv', 'Giordania': 'jo', 'Haiti': 'ht',
+    'Nuova Zelanda': 'nz', 'Panama': 'pa', 'Scozia': 'gb-sct', 'Iran': 'ir'
+}
     
 def genera_pdf():
     pdf = FPDF()
@@ -174,36 +194,75 @@ def genera_pdf():
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 210, 40, 'F')
     
+    # Procedura per scaricare e inserire le bandiere reali
     try:
-        pdf.image(d['flag_casa'], 15, 10, 20)
-        pdf.image(d['flag_fuori'], 175, 10, 20)
-    except:
-        pass 
+        url_casa = f"https://flagcdn.com/w80/{iso_map.get(casa, 'un')}.png"
+        url_ospite = f"https://flagcdn.com/w80/{iso_map.get(ospite, 'un')}.png"
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_casa:
+            urllib.request.urlretrieve(url_casa, f_casa.name)
+            pdf.image(f_casa.name, 15, 10, 20)
+            
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_ospite:
+            urllib.request.urlretrieve(url_ospite, f_ospite.name)
+            pdf.image(f_ospite.name, 175, 10, 20)
+    except Exception:
+        pass # Se manca la connessione o l'immagine, crea comunque il PDF
     
+    pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
 
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 10, "Fattore di Forma Dinamico Attivato", ln=True, align='C')
-    pdf.line(10, 30, 200, 30)
-    pdf.ln(10)
+    
+    pdf.set_text_color(0, 0, 0)
+    pdf.line(10, 45, 200, 45)
+    pdf.ln(15)
+    
     pdf.set_font("Arial", 'B', 14)
     pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
     pdf.ln(5)
+    
     pdf.set_font("Arial", '', 12)
     pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
+    
+    # --- 2. CREAZIONE DEL GRAFICO PER IL PDF ---
+    fig, ax = plt.subplots(figsize=(4, 3))
+    res_labels = [x[0] for x in top_5]
+    res_probs = [x[1] for x in top_5]
+    ax.bar(res_labels, res_probs, color='#00609c')
+    ax.set_ylabel('Probabilità (%)')
+    ax.set_title('Distribuzione Risultati')
+    plt.tight_layout()
+    
+    # Salva il grafico temporaneamente
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_chart:
+        plt.savefig(f_chart.name, format="png")
+        chart_path = f_chart.name
+    plt.close(fig)
+
+    # --- 3. AFFIANCAMENTO TESTO E GRAFICO ---
     pdf.set_font("Arial", 'B', 12)
-    pdf.cell(190, 10, "TOP 5 RISULTATI ESATTI CALCOLATI:", ln=True)
+    pdf.cell(95, 10, "TOP 5 RISULTATI ESATTI:", ln=False)
+    pdf.cell(95, 10, "GRAFICO PROBABILITA':", ln=True)
+    
     pdf.set_font("Arial", '', 12)
+    y_start = pdf.get_y() # Salva la posizione Y attuale per allineare il grafico
+    
     for pos, (res, pr) in enumerate(top_5, 1):
-        pdf.cell(190, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
+        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
+        
+    # Inserisce il grafico a destra
+    pdf.image(chart_path, x=105, y=y_start, w=90)
+    
     return pdf.output(dest="S").encode("latin1")
 
 st.download_button(
     label="⬇️ Scarica PDF",
     data=genera_pdf(),
-    file_name=f"Pronostico_partita:_{casa}_{ospite}.pdf",
+    file_name=f"Pronostico_partita_{casa}_{ospite}.pdf",
     mime="application/pdf"
 )
