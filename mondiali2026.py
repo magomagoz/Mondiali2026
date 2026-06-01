@@ -5,7 +5,7 @@ import pandas as pd
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Scout Predictor 2026", page_icon="⚽", layout="wide")
 
-st.title("banner.png")
+st.image("banner.png")
 #st.title("🗓️ WC 2026 - Match Predictor Ufficiale")
 st.write("Seleziona una partita dal calendario ufficiale per simulare il risultato esatto tramite la Distribuzione di Poisson.")
 
