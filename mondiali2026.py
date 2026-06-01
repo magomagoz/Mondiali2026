@@ -135,8 +135,14 @@ else:
 r_casa = scout_ratings[casa]
 r_ospite = scout_ratings[ospite]
 
-lambda_casa = MEDIA_GOL_TORNEO * r_casa['attacco'] * r_ospite['difesa']
-lambda_ospite = MEDIA_GOL_TORNEO * r_ospite['attacco'] * r_casa['difesa']
+# --- Nella sidebar o nel corpo principale aggiungi i controlli ---
+st.sidebar.subheader("Strategia & Infermeria")
+mod_motivazione_casa = st.sidebar.slider(f"Motivazione {casa}", 0.8, 1.2, 1.0, step=0.1)
+mod_motivazione_ospite = st.sidebar.slider(f"Motivazione {ospite}", 0.8, 1.2, 1.0, step=0.1)
+
+# --- Nel calcolo statistico applichi i modificatori ---
+lambda_casa = MEDIA_GOL_TORNEO * (r_casa['attacco'] * mod_motivazione_casa) * r_ospite['difesa']
+lambda_ospite = MEDIA_GOL_TORNEO * (r_ospite['attacco'] * mod_motivazione_ospite) * r_casa['difesa']
 
 st.write("---")
 st.subheader(f"🏟️ Pronostico: {r_casa['flag']} {casa} vs {ospite} {r_ospite['flag']}")
