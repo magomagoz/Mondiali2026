@@ -165,12 +165,24 @@ with col_d:
 # 6. Esportazione Report PDF Delphi Predictor
 st.write("---")
 st.subheader("📄 Esporta Scheda Partita")
-
+    
 def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    pdf.cell(190, 10, "DELPHI PREDICTOR REPORT", ln=True, align='C')
+
+    # --- 1. INTESTAZIONE E LOGHI ---
+    pdf.set_fill_color(0, 96, 156) 
+    pdf.rect(0, 0, 210, 40, 'F')
+    
+    try:
+        pdf.image(d['flag_casa'], 15, 10, 20)
+        pdf.image(d['flag_fuori'], 175, 10, 20)
+    except:
+        pass 
+    
+    pdf.set_font("Arial", 'B', 20)
+    pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
+
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 10, "Fattore di Forma Dinamico Attivato", ln=True, align='C')
     pdf.line(10, 30, 200, 30)
