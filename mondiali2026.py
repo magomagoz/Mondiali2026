@@ -200,18 +200,41 @@ def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
 
-    # --- 1. INTESTAZIONE ---
+    # --- 1. INTESTAZIONE E LOGHI (FASCIA BLU) ---
     pdf.set_fill_color(0, 96, 156) 
-    pdf.rect(0, 0, 240, 32, 'F')
+    # Larghezza impostata a 210 per coprire esattamente l'intera larghezza di un foglio A4
+    pdf.rect(0, 0, 210, 32, 'F') 
+        
+    # Procedura per scaricare e inserire le bandiere reali nella fascia blu
+    try:
+        url_casa = f"https://flagcdn.com/w80/{iso_map.get(casa, 'un')}.png"
+        url_ospite = f"https://flagcdn.com/w80/{iso_map.get(ospite, 'un')}.png"
+        
+        # Scarica la bandiera della squadra in casa
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_casa:
+            urllib.request.urlretrieve(url_casa, f_casa.name)
+            # x=12, y=9, larghezza=22 (centrata verticalmente all'altezza del titolo)
+            pdf.image(f_casa.name, 12, 9, 22)
+            
+        # Scarica la bandiera della squadra ospite
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_ospite:
+            urllib.request.urlretrieve(url_ospite, f_ospite.name)
+            # x=176, y=9, larghezza=22 (allineata simmetricamente a destra)
+            pdf.image(f_ospite.name, 176, 9, 22)
+    except Exception:
+        pass # Se non c'è internet, genera comunque il PDF senza bloccare l'app
+    
+    # Scrittura del Titolo Principale (centrato tra le due bandiere)
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
     
+    # Sottotitolo con data dell'analisi
     data_analisi = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
 
-    # --- 2. TITOLO MATCH E DATA ---
+    # --- 2. TITOLO MATCH E DATA/ORA ---
     pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", 'B', 16)
@@ -237,12 +260,11 @@ def genera_pdf():
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
     
-    # --- 4. CREAZIONE GRAFICO (Titolo in grassetto) ---
+    # --- 4. CREAZIONE GRAFICO ---
     fig, ax = plt.subplots(figsize=(4, 3))
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
     ax.bar(res_labels, res_probs, color='#00609c')
-    # Titolo del grafico in grassetto
     ax.set_title('Distribuzione Risultati', fontweight='bold')
     plt.tight_layout()
     
@@ -251,17 +273,16 @@ def genera_pdf():
         chart_path = f_chart.name
     plt.close(fig)
 
-    # --- 5. TOP 5 (Titolo in grassetto, risultati normali) ---
+    # --- 5. TOP 5 E GRAFICO AFFIANCATI ---
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "TOP 5 RISULTATI ESATTI:", ln=True)
     
     y_start = pdf.get_y()
     
-    # Imposta font normale per i risultati
     pdf.set_font("Arial", '', 11)
     for pos, (res, pr) in enumerate(top_5, 1):
         pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=False)
-        pdf.ln(10) 
+        pdf.ln(10)
         
     pdf.image(chart_path, x=110, y=y_start, w=90)
     
