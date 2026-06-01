@@ -202,7 +202,7 @@ def genera_pdf():
 
     # --- 1. INTESTAZIONE E LOGHI ---
     pdf.set_fill_color(0, 96, 156) 
-    pdf.rect(0, 0, 240, 30, 'F')
+    pdf.rect(0, 0, 240, 32, 'F')
         
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
@@ -235,6 +235,8 @@ def genera_pdf():
     pdf.ln(5)
 
     pdf.set_font("Arial", '', 12)
+    pdf.cell(190, 8, "GOL ATTESI DALLE SQUADRE:", ln=True)
+    pdf.set_font("Arial", '', 11)
     pdf.cell(95, 10, f"Gol Attesi {casa}: {lambda_casa:.2f}")
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
