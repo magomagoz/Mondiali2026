@@ -1,16 +1,16 @@
 import streamlit as st
 import math
 import pandas as pd
+from collections import defaultdict
 from fpdf import FPDF
-import base64
 
-st.set_page_config(page_title="Scout Predictor 2026", page_icon="⚽", layout="wide")
+st.set_page_config(page_title="Delphi Predictor Live", page_icon="⚽", layout="wide")
 
-st.title("🏆 WC 2026 - Advanced Delphi Predictor")
-st.write("Generatore di probabilità e Report PDF per la direzione sportiva.")
+st.title("🏆 WC 2026 - Delphi Predictor con Ranking Mobile")
+st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
 
-# 1. Database Squadre, Rating e Bandiere
-scout_ratings = {
+# 1. Baseline Storica dello Scout
+scout_ratings_base = {
     'Argentina': {'attacco': 1.85, 'difesa': 0.60, 'flag': '🇦🇷'}, 'Francia': {'attacco': 1.90, 'difesa': 0.65, 'flag': '🇫🇷'},
     'Brasile': {'attacco': 1.75, 'difesa': 0.70, 'flag': '🇧🇷'}, 'Inghilterra': {'attacco': 1.80, 'difesa': 0.65, 'flag': '🏴󠁧󠁢󠁥󠁮󠁧󠁿'},
     'Spagna': {'attacco': 1.70, 'difesa': 0.70, 'flag': '🇪🇸'}, 'Portogallo': {'attacco': 1.65, 'difesa': 0.75, 'flag': '🇵🇹'},
@@ -39,125 +39,102 @@ scout_ratings = {
 
 MEDIA_GOL_TORNEO = 1.35
 
-# 2. Calendari divisi per fasi
+# Lista fissa delle partite dei gironi per l'editor
 calendario_gironi = [
-    "11 Giu | Messico vs Sudafrica", "12 Giu | Corea del Sud vs Cechia",
-    "12 Giu | Canada vs Bosnia", "13 Giu | USA vs Paraguay",
-    "14 Giu | Brasile vs Marocco", "16 Giu | Francia vs Senegal",
-    "17 Giu | Argentina vs Algeria", "17 Giu | Inghilterra vs Croazia"
+    {"Data/Match": "11 Giu", "Casa": "Messico", "Ospite": "Sudafrica"},
+    {"Data/Match": "12 Giu", "Casa": "Corea del Sud", "Ospite": "Cechia"},
+    {"Data/Match": "12 Giu", "Casa": "Canada", "Ospite": "Bosnia"},
+    {"Data/Match": "13 Giu", "Casa": "USA", "Ospite": "Paraguay"},
+    {"Data/Match": "14 Giu", "Casa": "Brasile", "Ospite": "Marocco"},
+    {"Data/Match": "16 Giu", "Casa": "Francia", "Ospite": "Senegal"},
+    {"Data/Match": "17 Giu", "Casa": "Argentina", "Ospite": "Algeria"},
+    {"Data/Match": "17 Giu", "Casa": "Inghilterra", "Ospite": "Croazia"}
 ]
 
-# Tabellone Eliminazione Diretta (Placeholders per quando finiranno i gironi)
-calendario_eliminazione = [
-    "Sedicesimi | 1° Gruppo A vs 2° Gruppo B",
-    "Sedicesimi | 1° Gruppo C vs 2° Gruppo D",
-    "Ottavi | Vincitrice S1 vs Vincitrice S2",
-    "Quarti | Quarto Q1 vs Quarto Q2",
-    "Semifinale | Semifinalista 1 vs Semifinalista 2",
-    "Finale | Finalista 1 vs Finalista 2"
-]
+# 2. Gestione Stato della Tabella Risultati (iPad Friendly)
+if 'df_risultati' not in st.session_state:
+    init_data = []
+    for m in calendario_gironi:
+        init_data.append({
+            "Match": f"{m['Data/Match']} | {m['Casa']} vs {m['Ospite']}",
+            "Casa": m['Casa'], "Ospite": m['Ospite'],
+            "Gol Casa": 0, "Gol Ospite": 0, "Giocata": False
+        })
+    st.session_state.df_risultati = pd.DataFrame(init_data)
 
-def calcola_poisson(k, lamb):
-    if lamb <= 0: return 0.0
-    return (lamb**k * math.exp(-lamb)) / math.factorial(k)
+# Interfaccia di inserimento dati reali
+st.header("📝 Registro Risultati Reali (Fase a Gironi)")
+with st.expander("Apri il pannello per inserire i gol delle partite terminate", expanded=False):
+    edited_df = st.data_editor(
+        st.session_state.df_risultati,
+        column_config={
+            "Match": st.column_config.TextColumn("Incontro", disabled=True),
+            "Gol Casa": st.column_config.NumberColumn("Gol Casa", min_value=0, max_value=10, step=1),
+            "Gol Ospite": st.column_config.NumberColumn("Gol Ospite", min_value=0, max_value=10, step=1),
+            "Giocata": st.column_config.CheckboxColumn("Partita Terminata?")
+        },
+        disabled=["Match", "Casa", "Ospite"],
+        hide_index=True,
+        key="editor_gironi"
+    )
+    st.session_state.df_risultati = edited_df
 
-def crea_pdf_delphi(casa, ospite, top_5, lambda_c, lambda_o):
-    pdf = FPDF()
-    pdf.add_page()
-    pdf.set_font("Arial", 'B', 16)
-    
-    # Intestazione stile Delphi
-    pdf.cell(200, 10, txt="DELPHI PREDICTOR - SCOUTING REPORT", ln=True, align='C')
-    pdf.set_font("Arial", 'I', 10)
-    pdf.cell(200, 10, txt="FIFA World Cup 2026 - Analisi Predittiva Avanzata", ln=True, align='C')
-    pdf.line(10, 30, 200, 30)
-    
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 14)
-    pdf.cell(200, 10, txt=f"MATCH: {casa} vs {ospite}", ln=True, align='C')
-    
-    pdf.ln(5)
-    pdf.set_font("Arial", '', 12)
-    pdf.cell(100, 10, txt=f"xG Attesi {casa}: {lambda_c:.2f}", align='L')
-    pdf.cell(100, 10, txt=f"xG Attesi {ospite}: {lambda_o:.2f}", ln=True, align='R')
-    
-    pdf.ln(10)
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(200, 10, txt="TOP 5 RISULTATI ESATTI (Modello di Poisson):", ln=True, align='L')
-    
-    pdf.set_font("Arial", '', 12)
-    for pos, (risultato, prob) in enumerate(top_5, 1):
-        pdf.cell(200, 10, txt=f"{pos}. Risultato {risultato} -> Probabilita': {prob:.2f}%", ln=True, align='L')
+# 3. Ricalcolo del Ranking Mobile in base ai dati inseriti
+scout_ratings = {k: v.copy() for k, v in scout_ratings_base.items()}
+stats_torneo = defaultdict(lambda: {'gf': 0, 'gs': 0, 'p': 0})
+
+for _, row in st.session_state.df_risultati.iterrows():
+    if row['Giocata']:
+        c, o = row['Casa'], row['Ospite']
+        gc, go = int(row['Gol Casa']), int(row['Gol Ospite'])
         
-    pdf.ln(15)
-    pdf.set_font("Arial", 'I', 9)
-    pdf.cell(200, 10, txt="Nota: Analisi generata incrociando i rating offensivi e difensivi dei 26 convocati.", ln=True, align='L')
-    
-    return pdf.output(dest="S").encode("latin1")
+        stats_torneo[c]['gf'] += gc
+        stats_torneo[c]['gs'] += go
+        stats_torneo[c]['p'] += 1
+        
+        stats_torneo[o]['gf'] += go
+        stats_torneo[o]['gs'] += gc
+        stats_torneo[o]['p'] += 1
 
-# 3. Sidebar Interattiva
-st.sidebar.header("⚙️ Fase del Torneo")
-fase = st.sidebar.radio("Seleziona la fase:", ["Fase a Gironi", "Eliminazione Diretta"])
+# Applicazione formula di Poisson dinamica
+for team, s in stats_torneo.items():
+    if s['p'] > 0 and team in scout_ratings:
+        alpha = min(s['p'] * 0.15, 0.45) # Max 45% peso alla forma attuale
+        perf_att = s['gf'] / (s['p'] * MEDIA_GOL_TORNEO)
+        perf_def = s['gs'] / (s['p'] * MEDIA_GOL_TORNEO)
+        
+        # Aggiornamento parametri con clipping di sicurezza statistica
+        scout_ratings[team]['attacco'] = max(0.5, (alpha * perf_att) + ((1 - alpha) * scout_ratings_base[team]['attacco']))
+        scout_ratings[team]['difesa'] = max(0.3, (alpha * perf_def) + ((1 - alpha) * scout_ratings_base[team]['difesa']))
+
+# 4. Sidebar: Selezione Match per il Pronostico
+st.sidebar.header("🗓️ Seleziona Match da Analizzare")
+fase = st.sidebar.radio("Fase del Torneo:", ["Fase a Gironi", "Fasi Finali (Eliminazione)"])
 
 if fase == "Fase a Gironi":
-    match_selezionato = st.sidebar.selectbox("Partite in programma", calendario_gironi)
-    data_match, squadre = match_selezionato.split(" | ")
-    casa, ospite = squadre.split(" vs ")
+    lista_match_sidebar = [f"{row['Match']}" for _, row in st.session_state.df_risultati.iterrows()]
+    match_scelto = st.sidebar.selectbox("Partite del girone", lista_match_sidebar)
+    casa = match_scelto.split(" | ")[1].split(" vs ")[0]
+    ospite = match_scelto.split(" | ")[1].split(" vs ")[1]
+    titolo_match = match_scelto
 else:
-    match_selezionato = st.sidebar.selectbox("Tabellone", calendario_eliminazione)
-    turno, squadre = match_selezionato.split(" | ")
-    casa_placeholder, ospite_placeholder = squadre.split(" vs ")
-    st.sidebar.info("Sostituisci i placeholder con le squadre reali man mano che si qualificano:")
-    lista_squadre = sorted(list(scout_ratings.keys()))
-    casa = st.sidebar.selectbox("Imposta Squadra 1", lista_squadre, index=0)
-    ospite = st.sidebar.selectbox("Imposta Squadra 2", lista_squadre, index=1)
-    data_match = turno
+    tabellone = ["Sedicesimi | 1° Gruppo A vs 2° Gruppo B", "Sedicesimi | 1° Gruppo C vs 2° Gruppo D", "Ottavi | Vincente S1 vs Vincente S2", "Finale | Finalista 1 vs Finalista 2"]
+    slot = st.sidebar.selectbox("Slot Tabellone", tabellone)
+    st.sidebar.caption("Componi la sfida inserendo le squadre qualificate:")
+    t_list = sorted(list(scout_ratings.keys()))
+    casa = st.sidebar.selectbox("Squadra Casa", t_list, index=t_list.index("Argentina"))
+    ospite = st.sidebar.selectbox("Squadra Ospite", t_list, index=t_list.index("Francia"))
+    titolo_match = f"{slot.split(' | ')[0]} | {casa} vs {ospite}"
 
-# Estrazione Rating
-r_casa = scout_ratings.get(casa, {'attacco': 1.0, 'difesa': 1.0, 'flag': '🏴'})
-r_ospite = scout_ratings.get(ospite, {'attacco': 1.0, 'difesa': 1.0, 'flag': '🏴'})
+# 5. Elaborazione Statistica del Match Selezionato
+r_casa = scout_ratings[casa]
+r_ospite = scout_ratings[ospite]
 
 lambda_casa = MEDIA_GOL_TORNEO * r_casa['attacco'] * r_ospite['difesa']
 lambda_ospite = MEDIA_GOL_TORNEO * r_ospite['attacco'] * r_casa['difesa']
 
-# 4. Dashboard Visuale
-st.subheader(f"🏟️ {data_match}: {r_casa['flag']} {casa} - {ospite} {r_ospite['flag']}")
-c1, c2 = st.columns(2)
-with c1:
-    st.metric(label=f"xG {casa}", value=f"{lambda_casa:.2f}")
-with c2:
-    st.metric(label=f"xG {ospite}", value=f"{lambda_ospite:.2f}")
-    
 st.write("---")
+st.subheader(f"🏟️ Pronostico: {r_casa['flag']} {casa} vs {ospite} {r_ospite['flag']}")
 
-match_counts = {}
-for gol_c in range(6):
-    for gol_o in range(6):
-        prob_risultato = calcola_poisson(gol_c, lambda_casa) * calcola_poisson(gol_o, lambda_ospite) * 100
-        match_counts[f"{gol_c} - {gol_o}"] = prob_risultato
-        
-top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-
-st.subheader("🎯 Top 5 Risultati Previsti")
-col_sinistra, col_destra = st.columns([1, 1])
-
-with col_sinistra:
-    for pos, (risultato, prob) in enumerate(top_5, 1):
-        st.metric(label=f"{pos}° Opzione", value=risultato, delta=f"{prob:.2f}%")
-        
-with col_destra:
-    df_chart = pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"])
-    st.bar_chart(data=df_chart, x="Risultato", y="Probabilità (%)", color="#1f77b4")
-
-# 5. Generazione PDF Delphi
-st.write("---")
-st.subheader("📄 Esporta Scouting Report")
-st.write("Scarica la scheda tecnica in PDF pronta per la stampa o l'invio via mail.")
-
-pdf_bytes = crea_pdf_delphi(casa, ospite, top_5, lambda_casa, lambda_ospite)
-st.download_button(
-    label="⬇️ Scarica Report Delphi Predictor (PDF)",
-    data=pdf_bytes,
-    file_name=f"Delphi_Report_{casa}_{ospite}.pdf",
-    mime="application/pdf"
-)
+# Avviso visivo se il ranking è modificato dallo stato di forma
+if stats_torneo[casa]['p'] > 0 or
