@@ -203,10 +203,7 @@ def genera_pdf():
     # --- 1. INTESTAZIONE E LOGHI ---
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 210, 40, 'F')
-    
-    # [Mantieni qui il tuo blocco try/except originale per le bandiere]
-    # ...
-    
+        
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
@@ -214,14 +211,21 @@ def genera_pdf():
     data_analisi = datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
-    
-    # --- 2. TITOLO MATCH (UNICO) ---
+
+    # --- 2. TITOLO MATCH E DATA/ORA ---
     pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
+    
+    # Estrazione Data dalla stringa del match (es. "11 Giu")
+    # Se fase a gironi prendiamo la data, altrimenti scriviamo "Fase Finale"
+    data_partita = match_scelto.split(" | ")[0] if fase == "Fase a Gironi" else "Fase Finale"
+    
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(190, 8, f"Data programmata: {data_partita}", ln=True, align='C')
     pdf.ln(5)
-
+    
     # --- 3. PARAMETRI E RISULTATI ---
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
@@ -266,7 +270,7 @@ def genera_pdf():
 
 st.download_button(
     label="⬇️ Scarica PDF",
-    data=genera_pdf(),
-    file_name=f"Pronostico_partita_{casa}_{ospite}.pdf",
+    data=genera_pdf(), # Assicurati che le variabili siano accessibili
+    file_name=f"Pronostico_{casa}_{ospite}.pdf",
     mime="application/pdf"
 )
