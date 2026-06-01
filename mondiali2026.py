@@ -160,9 +160,10 @@ for gc in range(6):
 top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
 st.divider()
-st.columns(5)
-for pos, (res, pr) in enumerate(top_5, 5):
-    st.metric(label=f"{pos}° Opzione Risultato", value=res, delta=f"{pr:.2f}%")
+colonne = st.columns(5)
+
+for i, (res, pr) in enumerate(top_5):
+    colonne[i].metric(label=f"{i+1}° Opzione", value=res, delta=f"{pr:.2f}%")
 
 st.divider()
 st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
