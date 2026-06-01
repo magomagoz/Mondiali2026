@@ -226,6 +226,7 @@ def genera_pdf():
     pdf.cell(190, 8, f"Data programmata: {data_partita}", ln=True, align='C')
     pdf.ln(5)
     
+    st.divider()
     # --- 3. PARAMETRI E RISULTATI ---
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
@@ -234,6 +235,7 @@ def genera_pdf():
     pdf.cell(95, 8, f"Fattore Motivazione {ospite}: x{mod_motivazione_ospite}", ln=True)
     pdf.ln(5)
 
+    st.divider()
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "GOL ATTESI DALLE SQUADRE:", ln=True)
     pdf.set_font("Arial", '', 11)
@@ -246,7 +248,7 @@ def genera_pdf():
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
     ax.bar(res_labels, res_probs, color='#00609c')
-    #ax.set_title('Distribuzione Risultati')
+    ax.set_title('**Distribuzione Risultati**')
     plt.tight_layout()
     
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_chart:
@@ -260,9 +262,6 @@ def genera_pdf():
     
     y_start = pdf.get_y() # Salva la posizione Y dopo il titolo "TOP 5"
     
-    pdf.set_font("Arial", 'B', 12)
-    pdf.cell(95, 10, "DISTRIBUZIONE RISULTATI:", ln=True)
-
     for pos, (res, pr) in enumerate(top_5, 1):
         pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=False)
         pdf.ln(10) # Vai a capo per la prossima riga del testo
