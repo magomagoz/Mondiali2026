@@ -10,7 +10,7 @@ import os
 
 st.set_page_config(page_title="WC 2026 Predictor Live", page_icon="⚽", layout="wide")
 
-st.image("banner.png", use_container_width=True)
+st.image("banner1.png", use_container_width=True)
 #st.title("🏆 WC 2026 - Delphi Predictor con Ranking Mobile")
 st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
 
