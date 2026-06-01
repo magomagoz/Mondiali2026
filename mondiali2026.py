@@ -200,10 +200,9 @@ def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
 
-    # --- 1. INTESTAZIONE E LOGHI ---
+    # --- 1. INTESTAZIONE ---
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 240, 32, 'F')
-        
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
     pdf.cell(190, 10, "WORLD CUP - MATCH REPORT", ln=True, align='C')
@@ -212,16 +211,13 @@ def genera_pdf():
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
 
-    # --- 2. TITOLO MATCH E DATA/ORA ---
+    # --- 2. TITOLO MATCH E DATA ---
     pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
     
-    # Estrazione Data dalla stringa del match (es. "11 Giu")
-    # Se fase a gironi prendiamo la data, altrimenti scriviamo "Fase Finale"
     data_partita = match_scelto.split(" | ")[0] if fase == "Fase a Gironi" else "Fase Finale"
-    
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(190, 8, f"Data programmata: {data_partita}", ln=True, align='C')
     pdf.ln(5)
@@ -241,12 +237,13 @@ def genera_pdf():
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
     
-    # --- 4. CREAZIONE GRAFICO ---
+    # --- 4. CREAZIONE GRAFICO (Titolo in grassetto) ---
     fig, ax = plt.subplots(figsize=(4, 3))
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
     ax.bar(res_labels, res_probs, color='#00609c')
-    ax.set_title('Distribuzione Risultati')
+    # Titolo del grafico in grassetto
+    ax.set_title('Distribuzione Risultati', fontweight='bold')
     plt.tight_layout()
     
     with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as f_chart:
@@ -254,17 +251,18 @@ def genera_pdf():
         chart_path = f_chart.name
     plt.close(fig)
 
-    # --- 5. TOP 5 E GRAFICO AFFIANCATI ---
+    # --- 5. TOP 5 (Titolo in grassetto, risultati normali) ---
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "TOP 5 RISULTATI ESATTI:", ln=True)
     
-    y_start = pdf.get_y() # Salva la posizione Y dopo il titolo "TOP 5"
+    y_start = pdf.get_y()
     
+    # Imposta font normale per i risultati
+    pdf.set_font("Arial", '', 11)
     for pos, (res, pr) in enumerate(top_5, 1):
-        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=True)
-        pdf.ln(10) # Vai a capo per la prossima riga del testo
+        pdf.cell(95, 10, f" {pos}. Risultato {res} -> {pr:.2f}%", ln=False)
+        pdf.ln(10) 
         
-    # Inserisce il grafico a destra, partendo dalla Y salvata
     pdf.image(chart_path, x=110, y=y_start, w=90)
     
     return pdf.output(dest="S").encode("latin1")
