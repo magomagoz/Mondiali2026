@@ -1,0 +1,105 @@
+Data;Ora;Girone;Casa;Fuori
+2026-06-11;21:00;A;Messico;Sudafrica
+2026-06-12;04:00;A;Corea del Sud;Cechia
+2026-06-12;21:00;B;Canada;Bosnia
+2026-06-13;03:00;D;USA;Paraguay
+2026-06-13;21:00;B;Qatar;Svizzera
+2026-06-14;00:00;C;Brasile;Marocco
+2026-06-14;03:00;C;Haiti;Scozia
+2026-06-14;06:00;D;Australia;Turchia
+2026-06-14;19:00;E;Germania;Curacao
+2026-06-14;22:00;F;Olanda;Giappone
+2026-06-15;01:00;E;Costa d Avorio;Ecuador
+2026-06-15;04:00;F;Svezia;Tunisia
+2026-06-15;18:00;H;Spagna;Capo Verde
+2026-06-15;21:00;G;Belgio;Egitto
+2026-06-16;00:00;H;Arabia Saudita;Uruguay
+2026-06-16;03:00;G;Iran;Nuova Zelanda
+2026-06-16;21:00;I;Francia;Senegal
+2026-06-17;00:00;I;Iraq;Norvegia
+2026-06-17;03:00;J;Argentina;Algeria
+2026-06-17;06:00;J;Austria;Giordania
+2026-06-17;19:00;K;Portogallo;DR Congo
+2026-06-17;22:00;L;Inghilterra;Croazia
+2026-06-18;01:00;L;Ghana;Panama
+2026-06-18;04:00;K;Uzbekistan;Colombia
+2026-06-18;18:00;A;Cechia;Sudafrica
+2026-06-18;21:00;B;Svizzera;Bosnia
+2026-06-19;00:00;B;Canada;Qatar
+2026-06-19;03:00;A;Messico;Corea del Sud
+2026-06-19;21:00;D;USA;Australia
+2026-06-20;00:00;C;Scozia;Marocco
+2026-06-20;02:30;C;Brasile;Haiti
+2026-06-20;05:00;D;Turchia;Paraguay
+2026-06-20;19:00;F;Olanda;Svezia
+2026-06-20;22:00;E;Germania;Costa d Avorio
+2026-06-21;02:00;E;Ecuador;Curacao
+2026-06-21;06:00;F;Tunisia;Giappone
+2026-06-21;18:00;H;Spagna;Arabia Saudita
+2026-06-21;21:00;G;Belgio;Iran
+2026-06-22;00:00;H;Uruguay;Capo Verde
+2026-06-22;03:00;G;Nuova Zelanda;Egitto
+2026-06-22;19:00;J;Argentina;Austria
+2026-06-22;23:00;I;Francia;Iraq
+2026-06-23;02:00;I;Norvegia;Senegal
+2026-06-23;05:00;J;Giordania;Algeria
+2026-06-23;19:00;K;Portogallo;Uzbekistan
+2026-06-23;22:00;L;Inghilterra;Ghana
+2026-06-24;01:00;L;Panama;Croazia
+2026-06-24;04:00;K;Colombia;DR Congo
+2026-06-24;21:00;B;Svizzera;Canada
+2026-06-24;21:00;B;Bosnia;Qatar
+2026-06-25;00:00;C;Marocco;Haiti
+2026-06-25;00:00;C;Scozia;Brasile
+2026-06-25;03:00;A;Sudafrica;Corea del Sud
+2026-06-25;03:00;A;Cechia;Messico
+2026-06-25;22:00;E;Curacao;Costa d Avorio
+2026-06-25;22:00;E;Ecuador;Germania
+2026-06-26;01:00;F;Tunisia;Olanda
+2026-06-26;01:00;F;Giappone;Svezia
+2026-06-26;04:00;D;Paraguay;Australia
+2026-06-26;04:00;D;Turchia;USA
+2026-06-26;21:00;I;Norvegia;Francia
+2026-06-26;21:00;I;Senegal;Iraq
+2026-06-27;02:00;H;Capo Verde;Arabia Saudita
+2026-06-27;02:00;H;Uruguay;Spagna
+2026-06-27;05:00;G;Egitto;Iran
+2026-06-27;05:00;G;Nuova Zelanda;Belgio
+2026-06-27;23:00;L;Croazia;Ghana
+2026-06-27;23:00;L;Panama;Inghilterra
+2026-06-28;01:30;K;Colombia;Portogallo
+2026-06-28;01:30;K;DR Congo;Uzbekistan
+2026-06-28;04:00;J;Algeria;Austria
+2026-06-28;04:00;J;Giordania;Argentina
+2026-06-28;21:00;;TBD Home (Round of 32 #1);TBD Away (Round of 32 #1)
+2026-06-29;19:00;;TBD Home (Round of 32 #2);TBD Away (Round of 32 #2)
+2026-06-29;22:30;;TBD Home (Round of 32 #3);TBD Away (Round of 32 #3)
+2026-06-30;03:00;;TBD Home (Round of 32 #4);TBD Away (Round of 32 #4)
+2026-06-30;19:00;;TBD Home (Round of 32 #5);TBD Away (Round of 32 #5)
+2026-06-30;23:00;;TBD Home (Round of 32 #6);TBD Away (Round of 32 #6)
+2026-07-01;03:00;;TBD Home (Round of 32 #7);TBD Away (Round of 32 #7)
+2026-07-01;18:00;;TBD Home (Round of 32 #8);TBD Away (Round of 32 #8)
+2026-07-01;22:00;;TBD Home (Round of 32 #9);TBD Away (Round of 32 #9)
+2026-07-02;02:00;;TBD Home (Round of 32 #10);TBD Away (Round of 32 #10)
+2026-07-02;21:00;;TBD Home (Round of 32 #11);TBD Away (Round of 32 #11)
+2026-07-03;01:00;;TBD Home (Round of 32 #12);TBD Away (Round of 32 #12)
+2026-07-03;05:00;;TBD Home (Round of 32 #13);TBD Away (Round of 32 #13)
+2026-07-03;20:00;;TBD Home (Round of 32 #14);TBD Away (Round of 32 #14)
+2026-07-04;00:00;;TBD Home (Round of 32 #15);TBD Away (Round of 32 #15)
+2026-07-04;03:30;;TBD Home (Round of 32 #16);TBD Away (Round of 32 #16)
+2026-07-04;19:00;;TBD Home (Round of 16 #1);TBD Away (Round of 16 #1)
+2026-07-04;23:00;;TBD Home (Round of 16 #2);TBD Away (Round of 16 #2)
+2026-07-05;22:00;;TBD Home (Round of 16 #3);TBD Away (Round of 16 #3)
+2026-07-06;02:00;;TBD Home (Round of 16 #4);TBD Away (Round of 16 #4)
+2026-07-06;21:00;;TBD Home (Round of 16 #5);TBD Away (Round of 16 #5)
+2026-07-07;02:00;;TBD Home (Round of 16 #6);TBD Away (Round of 16 #6)
+2026-07-07;18:00;;TBD Home (Round of 16 #7);TBD Away (Round of 16 #7)
+2026-07-07;22:00;;TBD Home (Round of 16 #8);TBD Away (Round of 16 #8)
+2026-07-09;22:00;;TBD Home (Quarter-finals #1);TBD Away (Quarter-finals #1)
+2026-07-10;21:00;;TBD Home (Quarter-finals #2);TBD Away (Quarter-finals #2)
+2026-07-11;23:00;;TBD Home (Quarter-finals #3);TBD Away (Quarter-finals #3)
+2026-07-12;03:00;;TBD Home (Quarter-finals #4);TBD Away (Quarter-finals #4)
+2026-07-14;21:00;;TBD Home (Semi-finals #1);TBD Away (Semi-finals #1)
+2026-07-15;21:00;;TBD Home (Semi-finals #2);TBD Away (Semi-finals #2)
+2026-07-18;23:00;;TBD Home (3rd Place Final #1);TBD Away (3rd Place Final #1)
+2026-07-19;21:00;;TBD Home (Final #1);TBD Away (Final #1)
