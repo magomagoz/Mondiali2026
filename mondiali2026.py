@@ -9,49 +9,54 @@ import urllib.request
 import datetime
 import os
 
-# --- 1. CONFIGURAZIONE PAGINA (Deve essere il primissimo comando Streamlit) ---
+# --- 1. CONFIGURAZIONE PAGINA (Primo comando assoluto) ---
 st.set_page_config(page_title="WC 2026 Predictor Live", page_icon="⚽", layout="wide")
 
-# --- 2. INIZIALIZZAZIONE CALENDARIO DA CSV E SESSION STATE ---
+# --- 2. CARICAMENTO CALENDARIO DA CSV (Separatore ';' e colonna 'Fuori') ---
 @st.cache_data
 def carica_calendario_csv():
-    """Carica il file CSV esterno con tutto il calendario del mondiale"""
     try:
-        df = pd.read_csv("calendario_mondiali.csv")
-        # Forziamo il cast a stringa per evitare problemi di formattazione dati
+        # Il tuo CSV usa ';' come separatore
+        df = pd.read_csv("calendario_mondiali.csv", sep=";")
+        
+        # Pulizia e conversione dati per evitare stringhe nulle
         df['Data'] = df['Data'].astype(str)
         df['Ora'] = df['Ora'].astype(str)
-        df['Girone'] = df['Girone'].astype(str)
-        df['Casa'] = df['Casa'].astype(str)
-        df['Ospite'] = df['Ospite'].astype(str)
+        df['Girone'] = df['Girone'].fillna('').astype(str).apply(
+            lambda x: f"Girone {x}" if x.strip() != "" else "Fase Finale"
+        )
+        df['Casa'] = df['Casa'].astype(str).str.strip()
+        df['Fuori'] = df['Fuori'].astype(str).str.strip()
+        
+        # Genera l'etichetta univoca per il menu a tendina
+        df['Etichetta_Menu'] = df['Data'] + " - " + df['Ora'] + " - " + df['Girone'] + " | " + df['Casa'] + " vs " + df['Fuori']
         return df
     except Exception as e:
-        # Fallback di sicurezza se il file CSV non viene trovato
-        st.error(f"Errore nel caricamento del file 'calendario_mondiali.csv': {e}")
-        return pd.DataFrame(columns=["Data", "Ora", "Girone", "Casa", "Ospite"])
+        st.error(f"Errore critico nel caricamento del file CSV: {e}")
+        return pd.DataFrame(columns=["Data", "Ora", "Girone", "Casa", "Fuori", "Etichetta_Menu"])
 
-df_calendario_raw = carica_calendario_csv()
+df_calendario = carica_calendario_csv()
 
-# Inizializziamo il registro dei risultati nello session_state leggendo direttamente dal CSV
+# --- 3. INIZIALIZZAZIONE SESSION STATE PER IL REGISTRO RISULTATI ---
 if 'df_risultati' not in st.session_state:
     init_data = []
-    if not df_calendario_raw.empty:
-        for _, row in df_calendario_raw.iterrows():
+    if not df_calendario.empty:
+        for _, row in df_calendario.iterrows():
             init_data.append({
-                "Match": f"{row['Data']} - {row['Ora']} - {row['Girone']} | {row['Casa']} vs {row['Ospite']}",
+                "Match": row['Etichetta_Menu'],
                 "Casa": row['Casa'], 
-                "Ospite": row['Ospite'],
+                "Ospite": row['Fuori'], # Mantenuto internamente per l'editor
                 "Gol Casa": 0, 
                 "Gol Ospite": 0, 
                 "Giocata": False
             })
     st.session_state.df_risultati = pd.DataFrame(init_data)
 
-# --- 3. INTERFACCIA PRINCIPALE & BANNER ---
+# --- 4. INTERFACCIA GRAFICA: BANNER ---
 st.image("banner1.png", use_container_width=True)
 st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
 
-# --- 4. DATASET STATICI (Scout Ratings & Mappe ISO) ---
+# --- 5. BASELINE STRUTTURA SQUADRE ---
 scout_ratings_base = {
     'Argentina': {'attacco': 1.85, 'difesa': 0.60, 'flag': '🇦🇷'}, 'Francia': {'attacco': 1.90, 'difesa': 0.65, 'flag': '🇫🇷'},
     'Brasile': {'attacco': 1.75, 'difesa': 0.70, 'flag': '🇧🇷'}, 'Inghilterra': {'attacco': 1.80, 'difesa': 0.65, 'flag': '🇬🇧'},
@@ -96,9 +101,9 @@ iso_map = {
 
 MEDIA_GOL_TORNEO = 1.35
 
-# --- 5. REGISTRO RISULTATI REALI (DATA EDITOR) ---
-st.header("📝 Registro Risultati Reali (Fase a Gironi)")
-with st.expander("Apri il pannello per inserire i gol delle partite terminate", expanded=False):
+# --- 6. REGISTRO RISULTATI REALI (DATA EDITOR) ---
+st.header("📝 Registro Risultati Reali")
+with st.expander("Apri il pannello per registrare i match conclusi ed aggiornare il ranking di forma", expanded=False):
     if not st.session_state.df_risultati.empty:
         edited_df = st.data_editor(
             st.session_state.df_risultati,
@@ -110,86 +115,77 @@ with st.expander("Apri il pannello per inserire i gol delle partite terminate", 
             },
             disabled=["Match", "Casa", "Ospite"],
             hide_index=True,
-            key="editor_gironi_v2"
+            key="editor_global_v3"
         )
         st.session_state.df_risultati = edited_df
-    else:
-        st.warning("Nessun match caricato. Verifica che il file 'calendario_mondiali.csv' sia presente.")
 
-# --- 6. CALCOLO RANKING MOBILE DINAMICO (POISSON LIVE) ---
+# --- 7. RICALCOLO DINAMICO DEL RANKING MOBILE ---
 scout_ratings = {k: v.copy() for k, v in scout_ratings_base.items()}
 stats_torneo = defaultdict(lambda: {'gf': 0, 'gs': 0, 'p': 0})
 
-if not st.session_state.df_risultati.empty:
-    for _, row in st.session_state.df_risultati.iterrows():
-        if row['Giocata']:
-            c, o = row['Casa'], row['Ospite']
-            gc, go = int(row['Gol Casa']), int(row['Gol Ospite'])
-            
-            stats_torneo[c]['gf'] += gc
-            stats_torneo[c]['gs'] += go
-            stats_torneo[c]['p'] += 1
-            
-            stats_torneo[o]['gf'] += go
-            stats_torneo[o]['gs'] += gc
-            stats_torneo[o]['p'] += 1
+for _, row in st.session_state.df_risultati.iterrows():
+    if row['Giocata']:
+        c, o = row['Casa'], row['Ospite']
+        gc, go = int(row['Gol Casa']), int(row['Gol Ospite'])
+        
+        stats_torneo[c]['gf'] += gc
+        stats_torneo[c]['gs'] += go
+        stats_torneo[c]['p'] += 1
+        
+        stats_torneo[o]['gf'] += go
+        stats_torneo[o]['gs'] += gc
+        stats_torneo[o]['p'] += 1
 
 for team, s in stats_torneo.items():
     if s['p'] > 0 and team in scout_ratings:
-        alpha = min(s['p'] * 0.15, 0.45)  # Peso forma attuale massimo 45%
+        alpha = min(s['p'] * 0.15, 0.45)
         perf_att = s['gf'] / (s['p'] * MEDIA_GOL_TORNEO)
         perf_def = s['gs'] / (s['p'] * MEDIA_GOL_TORNEO)
         
         scout_ratings[team]['attacco'] = max(0.5, (alpha * perf_att) + ((1 - alpha) * scout_ratings_base[team]['attacco']))
         scout_ratings[team]['difesa'] = max(0.3, (alpha * perf_def) + ((1 - alpha) * scout_ratings_base[team]['difesa']))
 
-# --- 7. SIDEBAR: PANNELLO DI SELEZIONE E STRATEGIA ---
-st.sidebar.header("🗓️ Seleziona Match")
-fase = st.sidebar.radio("Fase del Torneo:", ["Fase a Gironi", "Fasi Finali (Eliminazione)"])
+# --- 8. SIDEBAR: SOLO SELEZIONE DA CSV (Nessun inserimento manuale) ---
+st.sidebar.header("🗓️ Navigazione Calendario")
 
-# Dichiarazione variabili di tempo e contesto di default
-data_partita, ora_partita, girone_partita = "", "", ""
-
-if fase == "Fase a Gironi" and not st.session_state.df_risultati.empty:
-    lista_match_sidebar = [f"{row['Match']}" for _, row in st.session_state.df_risultati.iterrows()]
-    match_scelto = st.sidebar.selectbox("Partite del girone", lista_match_sidebar)
+if not df_calendario.empty:
+    lista_opzioni = df_calendario['Etichetta_Menu'].tolist()
+    match_scelto = st.sidebar.selectbox("Seleziona la partita da analizzare:", lista_opzioni)
     
-    # Estrazione variabili temporali e squadre basate sul formato CSV salvato nello session_state
-    parte_sinistra, parte_destra = match_scelto.split(" | ")
-    dati_tempo_girone = parte_sinistra.split(" - ")
-    data_partita = dati_tempo_girone[0].strip()
-    ora_partita = dati_tempo_girone[1].strip()
-    girone_partita = dati_tempo_girone[2].strip()
+    # Estrarre l'indice esatto per risalire alla riga originaria del CSV in modo infallibile
+    idx_selezionato = lista_opzioni.index(match_scelto)
+    riga_selezionata = df_calendario.iloc[idx_selezionato]
     
-    squadre = parte_destra.split(" vs ")
-    casa = squadre[0].strip()
-    ospite = squadre[1].strip()
-    titolo_match = match_scelto
+    casa = riga_selezionata['Casa']
+    ospite = riga_selezionata['Fuori']
+    data_partita = riga_selezionata['Data']
+    ora_partita = riga_selezionata['Ora']
+    girone_partita = riga_selezionata['Girone']
 else:
-    tabellone = ["Sedicesimi | 1° Gruppo A vs 2° Gruppo B", "Sedicesimi | 1° Gruppo C vs 2° Gruppo D", "Ottavi | Vincente S1 vs Vincente S2", "Finale | Finalista 1 vs Finalista 2"]
-    slot = st.sidebar.selectbox("Slot Tabellone", tabellone)
-    st.sidebar.caption("Componi la sfida inserendo le squadre qualificate:")
-    t_list = sorted(list(scout_ratings.keys()))
-    casa = st.sidebar.selectbox("Squadra Casa", t_list, index=t_list.index("Argentina"))
-    ospite = st.sidebar.selectbox("Squadra Ospite", t_list, index=t_list.index("Francia"))
-    titolo_match = f"{slot.split(' | ')[0]} | {casa} vs {ospite}"
-    girone_partita = slot.split(' | ')[0]
+    st.sidebar.error("Impossibile generare la sidebar senza un file CSV valido.")
+    st.stop()
 
-# Sidebar Modificatori Strategici
+# Sidebar: Controlli Strategici dinamici sulle squadre selezionate
 st.sidebar.subheader("Strategia & Infermeria")
 mod_motivazione_casa = st.sidebar.slider(f"Motivazione {casa}", 0.8, 1.2, 1.0, step=0.1)
 mod_motivazione_ospite = st.sidebar.slider(f"Motivazione {ospite}", 0.8, 1.2, 1.0, step=0.1)
 
-# --- 8. ELABORAZIONE STATISTICA POISSON MALUS/BONUS ---
-r_casa = scout_ratings[casa]
-r_ospite = scout_ratings[ospite]
+# --- 9. GESTIONE SQUADRE PROVVISORIE O NON DIZIONARIO (Safety Fallback) ---
+# Profilo di fallback neutro se una squadra è "TBD" (es. Fase finale ancora da stabilire)
+fallback_profile = {'attacco': 1.00, 'difesa': 1.00, 'flag': '🏳️'}
+r_casa = scout_ratings.get(casa, fallback_profile)
+r_ospite = scout_ratings.get(ospite, fallback_profile)
 
+flag_casa = r_casa.get('flag', '🏳️')
+flag_ospite = r_ospite.get('flag', '🏳️')
+
+# --- 10. CALCOLO POISSON ---
 lambda_casa = MEDIA_GOL_TORNEO * (r_casa['attacco'] * mod_motivazione_casa) * r_ospite['difesa']
 lambda_ospite = MEDIA_GOL_TORNEO * (r_ospite['attacco'] * mod_motivazione_ospite) * r_casa['difesa']
 
-# --- 9. VISUALIZZAZIONE DATI SULL'APP ---
+# --- 11. VISUALIZZAZIONE PRONOSTICO SUL MAIN PANEL ---
 st.write("---")
-st.subheader(f"🏟️ Pronostico: {r_casa['flag']} {casa} vs {ospite} {r_ospite['flag']}")
+st.subheader(f"🏟️ Pronostico: {flag_casa} {casa} vs {ospite} {flag_ospite}")
 
 if stats_torneo[casa]['p'] > 0 or stats_torneo[ospite]['p'] > 0:
     st.info("📈 Nota dello Scout: Questo calcolo include il modificatore sullo stato di forma aggiornato dai risultati reali precedenti!")
@@ -198,7 +194,7 @@ c1, c2 = st.columns(2)
 with c1: st.metric(label=f"Gol Attesi {casa} (λ)", value=f"{lambda_casa:.2f}")
 with c2: st.metric(label=f"Gol Attesi {ospite} (λ)", value=f"{lambda_ospite:.2f}")
 
-# Calcolo Matrice di Probabilità dei Risultati Esatti
+# Calcolo Matrice Risultati
 match_counts = {}
 for gc in range(6):
     for go in range(6):
@@ -208,7 +204,6 @@ for gc in range(6):
 
 top_5 = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)[:5]
 
-# Renderizzazione Orizzontale dei 5 Pronostici Top su 5 Colonne
 st.divider()
 colonne = st.columns(5)
 for i, (res, pr) in enumerate(top_5):
@@ -217,7 +212,7 @@ for i, (res, pr) in enumerate(top_5):
 st.divider()
 st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
 
-# --- 10. GENERAZIONE REPORT PDF PROFESSIONALE ---
+# --- 12. GENERAZIONE REPORT PDF ---
 st.write("---")
 st.subheader("📄 Esporta Scheda Partita")
 
@@ -225,7 +220,7 @@ def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
 
-    # --- 1. INTESTAZIONE E LOGHI (FASCIA BLU) ---
+    # Fascia Blu Intestazione
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 210, 32, 'F') 
         
@@ -241,7 +236,7 @@ def genera_pdf():
             urllib.request.urlretrieve(url_ospite, f_ospite.name)
             pdf.image(f_ospite.name, 176, 9, 22)
     except Exception:
-        pass # Fallback silenzioso in assenza di rete internet
+        pass 
     
     pdf.set_text_color(255, 255, 255)
     pdf.set_font("Arial", 'B', 20)
@@ -251,22 +246,18 @@ def genera_pdf():
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
 
-    # --- 2. TITOLO MATCH E DATA/ORA PRELEVATI DAL MENU ---
+    # Dettagli del match letti dal CSV
     pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", 'B', 16)
     pdf.cell(190, 10, f"MATCH: {casa} vs {ospite}", ln=True, align='C')
     
-    if fase == "Fase a Gironi":
-        testo_data_ora = f"Data programmata: {data_partita} alle ore {ora_partita} ({girone_partita})"
-    else:
-        testo_data_ora = f"Fase del torneo: {girone_partita}"
-        
+    testo_data_ora = f"Data: {data_partita} | Ora: {ora_partita} ({girone_partita})"
     pdf.set_font("Arial", 'B', 12)
     pdf.cell(190, 8, testo_data_ora, ln=True, align='C')
     pdf.ln(5)
     
-    # --- 3. PARAMETRI E RISULTATI ---
+    # Parametri Applicati
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
     pdf.set_font("Arial", '', 11)
@@ -281,7 +272,7 @@ def genera_pdf():
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
     
-    # --- 4. CREAZIONE GRAFICO PER IL PDF (Titolo in grassetto) ---
+    # Creazione grafico
     fig, ax = plt.subplots(figsize=(4, 3))
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
@@ -294,7 +285,7 @@ def genera_pdf():
         chart_path = f_chart.name
     plt.close(fig)
 
-    # --- 5. TOP 5 (Titolo in grassetto, risultati normali) EFFETTO AFFIANCATO ---
+    # Affiancamento dati e grafico
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "TOP 5 RISULTATI ESATTI:", ln=True)
     
@@ -309,7 +300,7 @@ def genera_pdf():
     
     return pdf.output(dest="S").encode("latin1")
 
-# Pulsante di Download del PDF generato
+# Bottone unico per scaricare il PDF
 st.download_button(
     label="⬇️ Scarica PDF",
     data=genera_pdf(),
