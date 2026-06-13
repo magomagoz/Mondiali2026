@@ -37,20 +37,39 @@ def carica_calendario_csv():
 
 df_calendario = carica_calendario_csv()
 
-# --- 3. INIZIALIZZAZIONE SESSION STATE PER IL REGISTRO RISULTATI ---
+# --- 3. INIZIALIZZAZIONE E PERSISTENZA DEI RISULTATI SU FILE LOCALE ---
+FILE_RISULTATI = "risultati_salvati.csv"
+
 if 'df_risultati' not in st.session_state:
+    # 1. Generiamo la struttura base partendo sempre dai nomi correnti nel file del calendario
     init_data = []
     if not df_calendario.empty:
-        for _, row in df_calendario.iterrows():
+        for idx, row in df_calendario.iterrows():
             init_data.append({
+                "ID_Match": idx, # Indice immutabile di riga per sincronizzare i TBD
                 "Match": row['Etichetta_Menu'],
                 "Casa": row['Casa'], 
-                "Ospite": row['Fuori'], # Mantenuto internamente per l'editor
+                "Ospite": row['Fuori'], 
                 "Gol Casa": 0, 
                 "Gol Ospite": 0, 
                 "Giocata": False
             })
-    st.session_state.df_risultati = pd.DataFrame(init_data)
+    df_base = pd.DataFrame(init_data)
+    
+    # 2. Se esiste un salvataggio precedente sul disco, recuperiamo i gol inseriti dall'utente
+    if os.path.exists(FILE_RISULTATI) and not df_base.empty:
+        try:
+            df_salvato = pd.read_csv(FILE_RISULTATI, sep=";")
+            # Sostituiamo le colonne dei gol e dello stato con quelle memorizzate nel file locale
+            df_base = df_base.drop(columns=["Gol Casa", "Gol Ospite", "Giocata"])
+            df_base = pd.merge(df_base, df_salvato[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]], on="ID_Match", how="left")
+            df_base["Gol Casa"] = df_base["Gol Casa"].fillna(0).astype(int)
+            df_base["Gol Ospite"] = df_base["Gol Ospite"].fillna(0).astype(int)
+            df_base["Giocata"] = df_base["Giocata"].fillna(False).astype(bool)
+        except Exception as e:
+            st.warning(f"Impossibile ripristinare la cronologia dei risultati ({e}). Verrà ricreato il file.")
+            
+    st.session_state.df_risultati = df_base
 
 # --- 4. INTERFACCIA GRAFICA: BANNER ---
 st.image("banner1.png", use_container_width=True)
@@ -101,13 +120,14 @@ iso_map = {
 
 MEDIA_GOL_TORNEO = 1.35
 
-# --- 6. REGISTRO RISULTATI REALI (DATA EDITOR) ---
+# --- 6. REGISTRO RISULTATI REALI (DATA EDITOR CON SALVATAGGIO AUTOMATICO) ---
 st.header("📝 Registro Risultati Reali")
 with st.expander("Apri il pannello per registrare i match conclusi ed aggiornare il ranking di forma", expanded=False):
     if not st.session_state.df_risultati.empty:
         edited_df = st.data_editor(
             st.session_state.df_risultati,
             column_config={
+                "ID_Match": None, # Nasconde la colonna tecnica di sincronizzazione all'utente
                 "Match": st.column_config.TextColumn("Incontro Programmato", disabled=True),
                 "Gol Casa": st.column_config.NumberColumn("Gol Casa", min_value=0, max_value=10, step=1),
                 "Gol Ospite": st.column_config.NumberColumn("Gol Ospite", min_value=0, max_value=10, step=1),
@@ -118,6 +138,8 @@ with st.expander("Apri il pannello per registrare i match conclusi ed aggiornare
             key="editor_global_v3"
         )
         st.session_state.df_risultati = edited_df
+        # Scrive in tempo reale i dati sul file per fissarli in memoria persistente
+        edited_df[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]].to_csv(FILE_RISULTATI, index=False, sep=";")
 
 # --- 7. RICALCOLO DINAMICO DEL RANKING MOBILE ---
 scout_ratings = {k: v.copy() for k, v in scout_ratings_base.items()}
@@ -145,14 +167,13 @@ for team, s in stats_torneo.items():
         scout_ratings[team]['attacco'] = max(0.5, (alpha * perf_att) + ((1 - alpha) * scout_ratings_base[team]['attacco']))
         scout_ratings[team]['difesa'] = max(0.3, (alpha * perf_def) + ((1 - alpha) * scout_ratings_base[team]['difesa']))
 
-# --- 8. SIDEBAR: SOLO SELEZIONE DA CSV (Nessun inserimento manuale) ---
+# --- 8. SIDEBAR: SOLO SELEZIONE DA CSV ---
 st.sidebar.header("🗓️ Navigazione Calendario")
 
 if not df_calendario.empty:
     lista_opzioni = df_calendario['Etichetta_Menu'].tolist()
     match_scelto = st.sidebar.selectbox("Seleziona la partita da analizzare:", lista_opzioni)
     
-    # Estrarre l'indice esatto per risalire alla riga originaria del CSV in modo infallibile
     idx_selezionato = lista_opzioni.index(match_scelto)
     riga_selezionata = df_calendario.iloc[idx_selezionato]
     
@@ -165,13 +186,11 @@ else:
     st.sidebar.error("Impossibile generare la sidebar senza un file CSV valido.")
     st.stop()
 
-# Sidebar: Controlli Strategici dinamici sulle squadre selezionate
 st.sidebar.subheader("Strategia & Infermeria")
 mod_motivazione_casa = st.sidebar.slider(f"Motivazione {casa}", 0.8, 1.2, 1.0, step=0.1)
 mod_motivazione_ospite = st.sidebar.slider(f"Motivazione {ospite}", 0.8, 1.2, 1.0, step=0.1)
 
-# --- 9. GESTIONE SQUADRE PROVVISORIE O NON DIZIONARIO (Safety Fallback) ---
-# Profilo di fallback neutro se una squadra è "TBD" (es. Fase finale ancora da stabilire)
+# --- 9. GESTIONE SQUADRE PROVVISORIE O NON DIZIONARIO ---
 fallback_profile = {'attacco': 1.00, 'difesa': 1.00, 'flag': '🏳️'}
 r_casa = scout_ratings.get(casa, fallback_profile)
 r_ospite = scout_ratings.get(ospite, fallback_profile)
@@ -194,7 +213,6 @@ c1, c2 = st.columns(2)
 with c1: st.metric(label=f"Gol Attesi {casa} (λ)", value=f"{lambda_casa:.2f}")
 with c2: st.metric(label=f"Gol Attesi {ospite} (λ)", value=f"{lambda_ospite:.2f}")
 
-# Calcolo Matrice Risultati
 match_counts = {}
 for gc in range(6):
     for go in range(6):
@@ -220,7 +238,6 @@ def genera_pdf():
     pdf = FPDF()
     pdf.add_page()
 
-    # Fascia Blu Intestazione
     pdf.set_fill_color(0, 96, 156) 
     pdf.rect(0, 0, 210, 32, 'F') 
         
@@ -246,7 +263,6 @@ def genera_pdf():
     pdf.set_font("Arial", 'I', 10)
     pdf.cell(190, 7, f"Analisi effettuata il: {data_analisi}", ln=True, align='C')
 
-    # Dettagli del match letti dal CSV
     pdf.ln(10)
     pdf.set_text_color(0, 0, 0)
     pdf.set_font("Arial", 'B', 16)
@@ -257,7 +273,6 @@ def genera_pdf():
     pdf.cell(190, 8, testo_data_ora, ln=True, align='C')
     pdf.ln(5)
     
-    # Parametri Applicati
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "PARAMETRI DI ANALISI APPLICATI:", ln=True)
     pdf.set_font("Arial", '', 11)
@@ -272,7 +287,6 @@ def genera_pdf():
     pdf.cell(95, 10, f"Gol Attesi {ospite}: {lambda_ospite:.2f}", ln=True)
     pdf.ln(10)
     
-    # Creazione grafico
     fig, ax = plt.subplots(figsize=(4, 3))
     res_labels = [x[0] for x in top_5]
     res_probs = [x[1] for x in top_5]
@@ -285,7 +299,6 @@ def genera_pdf():
         chart_path = f_chart.name
     plt.close(fig)
 
-    # Affiancamento dati e grafico
     pdf.set_font("Arial", 'B', 11)
     pdf.cell(190, 8, "TOP 5 RISULTATI ESATTI:", ln=True)
     
@@ -300,7 +313,6 @@ def genera_pdf():
     
     return pdf.output(dest="S").encode("latin1")
 
-# Bottone unico per scaricare il PDF
 st.download_button(
     label="⬇️ Scarica PDF",
     data=genera_pdf(),
