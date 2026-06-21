@@ -12,14 +12,11 @@ import os
 # --- 1. CONFIGURAZIONE PAGINA (Primo comando assoluto) ---
 st.set_page_config(page_title="WC 2026 Predictor Live", page_icon="⚽", layout="wide")
 
-# --- 2. CARICAMENTO CALENDARIO DA CSV (Separatore ';' e colonna 'Fuori') ---
+# --- 2. CARICAMENTO CALENDARIO BASE (Dal file calendario_mondiali.csv) ---
 @st.cache_data
 def carica_calendario_csv():
     try:
-        # Il tuo CSV usa ';' come separatore
         df = pd.read_csv("calendario_mondiali.csv", sep=";")
-        
-        # Pulizia e conversione dati per evitare stringhe nulle
         df['Data'] = df['Data'].astype(str)
         df['Ora'] = df['Ora'].astype(str)
         df['Girone'] = df['Girone'].fillna('').astype(str).apply(
@@ -27,26 +24,21 @@ def carica_calendario_csv():
         )
         df['Casa'] = df['Casa'].astype(str).str.strip()
         df['Fuori'] = df['Fuori'].astype(str).str.strip()
-        
-        # Genera l'etichetta univoca per il menu a tendina
         df['Etichetta_Menu'] = df['Data'] + " - " + df['Ora'] + " - " + df['Girone'] + " | " + df['Casa'] + " vs " + df['Fuori']
         return df
     except Exception as e:
-        st.error(f"Errore critico nel caricamento del file CSV: {e}")
+        st.error(f"Errore critico nel caricamento del file calendario_mondiali.csv: {e}")
         return pd.DataFrame(columns=["Data", "Ora", "Girone", "Casa", "Fuori", "Etichetta_Menu"])
 
 df_calendario = carica_calendario_csv()
 
-# --- 3. INIZIALIZZAZIONE E PERSISTENZA DEI RISULTATI SU FILE LOCALE ---
-FILE_RISULTATI = "risultati_salvati.csv"
-
+# --- 3. INIZIALIZZAZIONE STRUTTURA RISULTATI IN MEMORIA ---
 if 'df_risultati' not in st.session_state:
-    # 1. Generiamo la struttura base partendo sempre dai nomi correnti nel file del calendario
     init_data = []
     if not df_calendario.empty:
         for idx, row in df_calendario.iterrows():
             init_data.append({
-                "ID_Match": idx, # Indice immutabile di riga per sincronizzare i TBD
+                "ID_Match": idx, 
                 "Match": row['Etichetta_Menu'],
                 "Casa": row['Casa'], 
                 "Ospite": row['Fuori'], 
@@ -54,28 +46,40 @@ if 'df_risultati' not in st.session_state:
                 "Gol Ospite": 0, 
                 "Giocata": False
             })
-    df_base = pd.DataFrame(init_data)
-    
-    # 2. Se esiste un salvataggio precedente sul disco, recuperiamo i gol inseriti dall'utente
-    if os.path.exists(FILE_RISULTATI) and not df_base.empty:
+    st.session_state.df_risultati = pd.DataFrame(init_data)
+
+# --- 4. GESTIONE SALVATAGGI: CARICAMENTO FILE STORICO (Upload) ---
+st.sidebar.header("💾 Carica Salvataggio")
+storico_file = st.sidebar.file_uploader("Ripristina i risultati salvati (CSV)", type=['csv'], help="Carica qui il file 'risultati_salvati.csv' che hai scaricato in precedenza.")
+
+if storico_file is not None:
+    # Controlliamo di non ricaricare lo stesso file all'infinito sovrascrivendo le modifiche live
+    if st.session_state.get('last_loaded_file') != storico_file.name:
         try:
-            df_salvato = pd.read_csv(FILE_RISULTATI, sep=";")
-            # Sostituiamo le colonne dei gol e dello stato con quelle memorizzate nel file locale
-            df_base = df_base.drop(columns=["Gol Casa", "Gol Ospite", "Giocata"])
-            df_base = pd.merge(df_base, df_salvato[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]], on="ID_Match", how="left")
-            df_base["Gol Casa"] = df_base["Gol Casa"].fillna(0).astype(int)
-            df_base["Gol Ospite"] = df_base["Gol Ospite"].fillna(0).astype(int)
-            df_base["Giocata"] = df_base["Giocata"].fillna(False).astype(bool)
-        except Exception as e:
-            st.warning(f"Impossibile ripristinare la cronologia dei risultati ({e}). Verrà ricreato il file.")
+            df_salvato = pd.read_csv(storico_file, sep=";")
+            # Uniamo i dati salvati con il calendario base tramite l'ID_Match
+            df_base = st.session_state.df_risultati.drop(columns=["Gol Casa", "Gol Ospite", "Giocata"])
+            df_merged = pd.merge(df_base, df_salvato[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]], on="ID_Match", how="left")
             
-    st.session_state.df_risultati = df_base
+            # Sistemiamo eventuali valori nulli
+            df_merged["Gol Casa"] = df_merged["Gol Casa"].fillna(0).astype(int)
+            df_merged["Gol Ospite"] = df_merged["Gol Ospite"].fillna(0).astype(int)
+            df_merged["Giocata"] = df_merged["Giocata"].fillna(False).astype(bool)
+            
+            st.session_state.df_risultati = df_merged
+            st.session_state.last_loaded_file = storico_file.name
+            st.sidebar.success("✅ Salvataggio ripristinato con successo!")
+            st.rerun() # Aggiorna la pagina coi nuovi dati
+        except Exception as e:
+            st.sidebar.error(f"Errore durante il caricamento del salvataggio: {e}")
 
-# --- 4. INTERFACCIA GRAFICA: BANNER ---
+st.sidebar.markdown("---")
+
+# --- 5. INTERFACCIA GRAFICA: BANNER ---
 st.image("banner1.png", use_container_width=True)
-st.write("Inserisci i risultati reali nel pannello per aggiornare lo stato di forma delle squadre in tempo reale.")
+st.write("Inserisci i risultati reali, poi **salva il file** per non perderli. Il sistema ricalcolerà la forza delle squadre per i pronostici futuri.")
 
-# --- 5. BASELINE STRUTTURA SQUADRE ---
+# --- 6. BASELINE STRUTTURA SQUADRE ---
 scout_ratings_base = {
     'Argentina': {'attacco': 1.85, 'difesa': 0.60, 'flag': '🇦🇷'}, 'Francia': {'attacco': 1.90, 'difesa': 0.65, 'flag': '🇫🇷'},
     'Brasile': {'attacco': 1.75, 'difesa': 0.70, 'flag': '🇧🇷'}, 'Inghilterra': {'attacco': 1.80, 'difesa': 0.65, 'flag': '🇬🇧'},
@@ -120,14 +124,14 @@ iso_map = {
 
 MEDIA_GOL_TORNEO = 1.35
 
-# --- 6. REGISTRO RISULTATI REALI (DATA EDITOR CON SALVATAGGIO AUTOMATICO) ---
+# --- 7. TABELLA RISULTATI CON BOTTONE DI ESPORTAZIONE ---
 st.header("📝 Registro Risultati Reali")
-with st.expander("Apri il pannello per registrare i match conclusi ed aggiornare il ranking di forma", expanded=False):
+with st.expander("Apri il pannello per registrare i match conclusi", expanded=False):
     if not st.session_state.df_risultati.empty:
         edited_df = st.data_editor(
             st.session_state.df_risultati,
             column_config={
-                "ID_Match": None, # Nasconde la colonna tecnica di sincronizzazione all'utente
+                "ID_Match": None, # Nascosta all'utente
                 "Match": st.column_config.TextColumn("Incontro Programmato", disabled=True),
                 "Gol Casa": st.column_config.NumberColumn("Gol Casa", min_value=0, max_value=10, step=1),
                 "Gol Ospite": st.column_config.NumberColumn("Gol Ospite", min_value=0, max_value=10, step=1),
@@ -135,13 +139,22 @@ with st.expander("Apri il pannello per registrare i match conclusi ed aggiornare
             },
             disabled=["Match", "Casa", "Ospite"],
             hide_index=True,
-            key="editor_global_v3"
+            key="editor_global_v4"
         )
         st.session_state.df_risultati = edited_df
-        # Scrive in tempo reale i dati sul file per fissarli in memoria persistente
-        edited_df[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]].to_csv(FILE_RISULTATI, index=False, sep=";")
+        
+        # Genera il file CSV dai dati appena modificati per scaricarlo
+        csv_export = edited_df[["ID_Match", "Gol Casa", "Gol Ospite", "Giocata"]].to_csv(index=False, sep=";").encode('utf-8')
+        
+        st.download_button(
+            label="💾 CLICCA QUI PER SCARICARE I RISULTATI AGGIORNATI",
+            data=csv_export,
+            file_name="risultati_salvati.csv",
+            mime="text/csv",
+            help="Scarica questo file e ricaricalo domani nella sidebar a sinistra per riprendere da dove avevi lasciato!"
+        )
 
-# --- 7. RICALCOLO DINAMICO DEL RANKING MOBILE ---
+# --- 8. RICALCOLO DINAMICO DEL RANKING MOBILE SUI DATI CARICATI/INSERITI ---
 scout_ratings = {k: v.copy() for k, v in scout_ratings_base.items()}
 stats_torneo = defaultdict(lambda: {'gf': 0, 'gs': 0, 'p': 0})
 
@@ -158,6 +171,7 @@ for _, row in st.session_state.df_risultati.iterrows():
         stats_torneo[o]['gs'] += gc
         stats_torneo[o]['p'] += 1
 
+# Le squadre che hanno giocato vedono aggiornata la loro forza per le partite future!
 for team, s in stats_torneo.items():
     if s['p'] > 0 and team in scout_ratings:
         alpha = min(s['p'] * 0.15, 0.45)
@@ -167,7 +181,7 @@ for team, s in stats_torneo.items():
         scout_ratings[team]['attacco'] = max(0.5, (alpha * perf_att) + ((1 - alpha) * scout_ratings_base[team]['attacco']))
         scout_ratings[team]['difesa'] = max(0.3, (alpha * perf_def) + ((1 - alpha) * scout_ratings_base[team]['difesa']))
 
-# --- 8. SIDEBAR: SOLO SELEZIONE DA CSV ---
+# --- 9. SIDEBAR: NAVIGAZIONE CALENDARIO ---
 st.sidebar.header("🗓️ Navigazione Calendario")
 
 if not df_calendario.empty:
@@ -183,14 +197,14 @@ if not df_calendario.empty:
     ora_partita = riga_selezionata['Ora']
     girone_partita = riga_selezionata['Girone']
 else:
-    st.sidebar.error("Impossibile generare la sidebar senza un file CSV valido.")
+    st.sidebar.error("Impossibile generare la sidebar senza il file 'calendario_mondiali.csv'.")
     st.stop()
 
 st.sidebar.subheader("Strategia & Infermeria")
 mod_motivazione_casa = st.sidebar.slider(f"Motivazione {casa}", 0.8, 1.2, 1.0, step=0.1)
 mod_motivazione_ospite = st.sidebar.slider(f"Motivazione {ospite}", 0.8, 1.2, 1.0, step=0.1)
 
-# --- 9. GESTIONE SQUADRE PROVVISORIE O NON DIZIONARIO ---
+# --- 10. GESTIONE SQUADRE PROVVISORIE (TBD) ---
 fallback_profile = {'attacco': 1.00, 'difesa': 1.00, 'flag': '🏳️'}
 r_casa = scout_ratings.get(casa, fallback_profile)
 r_ospite = scout_ratings.get(ospite, fallback_profile)
@@ -198,16 +212,16 @@ r_ospite = scout_ratings.get(ospite, fallback_profile)
 flag_casa = r_casa.get('flag', '🏳️')
 flag_ospite = r_ospite.get('flag', '🏳️')
 
-# --- 10. CALCOLO POISSON ---
+# --- 11. CALCOLO POISSON ---
 lambda_casa = MEDIA_GOL_TORNEO * (r_casa['attacco'] * mod_motivazione_casa) * r_ospite['difesa']
 lambda_ospite = MEDIA_GOL_TORNEO * (r_ospite['attacco'] * mod_motivazione_ospite) * r_casa['difesa']
 
-# --- 11. VISUALIZZAZIONE PRONOSTICO SUL MAIN PANEL ---
+# --- 12. VISUALIZZAZIONE PRONOSTICO SUL MAIN PANEL ---
 st.write("---")
 st.subheader(f"🏟️ Pronostico: {flag_casa} {casa} vs {ospite} {flag_ospite}")
 
 if stats_torneo[casa]['p'] > 0 or stats_torneo[ospite]['p'] > 0:
-    st.info("📈 Nota dello Scout: Questo calcolo include il modificatore sullo stato di forma aggiornato dai risultati reali precedenti!")
+    st.info("📈 Nota dello Scout: Questo calcolo include lo stato di forma derivato dai file CSV che hai caricato!")
 
 c1, c2 = st.columns(2)
 with c1: st.metric(label=f"Gol Attesi {casa} (λ)", value=f"{lambda_casa:.2f}")
@@ -230,7 +244,7 @@ for i, (res, pr) in enumerate(top_5):
 st.divider()
 st.bar_chart(pd.DataFrame(top_5, columns=["Risultato", "Probabilità (%)"]), x="Risultato", y="Probabilità (%)")
 
-# --- 12. GENERAZIONE REPORT PDF ---
+# --- 13. GENERAZIONE REPORT PDF ---
 st.write("---")
 st.subheader("📄 Esporta Scheda Partita")
 
@@ -314,7 +328,7 @@ def genera_pdf():
     return pdf.output(dest="S").encode("latin1")
 
 st.download_button(
-    label="⬇️ Scarica PDF",
+    label="⬇️ Scarica PDF Partita",
     data=genera_pdf(),
     file_name=f"Pronostico_{casa}_{ospite}.pdf",
     mime="application/pdf"
