@@ -71,34 +71,34 @@ Data;Ora;Girone;Casa;Fuori
 2026-06-28;01:30;K;DR Congo;Uzbekistan
 2026-06-28;04:00;J;Algeria;Austria
 2026-06-28;04:00;J;Giordania;Argentina
-2026-06-28;21:00;16;Sudafrica;Canada
-2026-06-29;19:00;16;Brasile;Giappone
-2026-06-29;22:30;16;Germania;Paraguay
-2026-06-30;03:00;16;Olanda;Marocco
-2026-06-30;19:00;16;Costa d Avorio;Norvegia
-2026-06-30;23:00;16;Francia;Svezia
-2026-07-01;03:00;16;Messico;Ecuador
-2026-07-01;18:00;16;Inghilterra; Congo
-2026-07-01;22:00;16;Belgio;Senegal
-2026-07-02;02:00;16;USA;Bosnia
-2026-07-02;21:00;16;Spagna;Austria
-2026-07-03;01:00;16;Portogallo;Croazia
-2026-07-03;05:00;16;Svizzera;Algeria
-2026-07-03;20:00;16;Australia;Egitto
-2026-07-04;00:00;16;Argentina;Capo Verde
-2026-07-04;03:30;16;Colombia;Ghana
-2026-07-04;19:00;8;TBD Home (Round of 16 #1);TBD Away (Round of 16 #1)
-2026-07-04;23:00;8;TBD Home (Round of 16 #2);TBD Away (Round of 16 #2)
-2026-07-05;22:00;8;TBD Home (Round of 16 #3);TBD Away (Round of 16 #3)
-2026-07-06;02:00;8;TBD Home (Round of 16 #4);TBD Away (Round of 16 #4)
-2026-07-06;21:00;8;TBD Home (Round of 16 #5);TBD Away (Round of 16 #5)
-2026-07-07;02:00;8;TBD Home (Round of 16 #6);TBD Away (Round of 16 #6)
-2026-07-07;18:00;8;TBD Home (Round of 16 #7);TBD Away (Round of 16 #7)
-2026-07-07;22:00;8;TBD Home (Round of 16 #8);TBD Away (Round of 16 #8)
-2026-07-09;22:00;4;TBD Home (Quarter-finals #1);TBD Away (Quarter-finals #1)
-2026-07-10;21:00;4;TBD Home (Quarter-finals #2);TBD Away (Quarter-finals #2)
-2026-07-11;23:00;4;TBD Home (Quarter-finals #3);TBD Away (Quarter-finals #3)
-2026-07-12;03:00;4;TBD Home (Quarter-finals #4);TBD Away (Quarter-finals #4)
+2026-06-28;21:00;SEDICESIMI;Sudafrica;Canada
+2026-06-29;19:00;SEDICESIMI;Brasile;Giappone
+2026-06-29;22:30;SEDICESIMI;Germania;Paraguay
+2026-06-30;03:00;SEDICESIMI;Olanda;Marocco
+2026-06-30;19:00;SEDICESIMI;Costa d Avorio;Norvegia
+2026-06-30;23:00;SEDICESIMI;Francia;Svezia
+2026-07-01;03:00;SEDICESIMI;Messico;Ecuador
+2026-07-01;18:00;SEDICESIMI;Inghilterra; Congo
+2026-07-01;22:00;SEDICESIMI;Belgio;Senegal
+2026-07-02;02:00;SEDICESIMI;USA;Bosnia
+2026-07-02;21:00;SEDICESIMI;Spagna;Austria
+2026-07-03;01:00;SEDICESIMI;Portogallo;Croazia
+2026-07-03;05:00;SEDICESIMI;Svizzera;Algeria
+2026-07-03;20:00;SEDICESIMI;Australia;Egitto
+2026-07-04;00:00;SEDICESIMI;Argentina;Capo Verde
+2026-07-04;03:30;SEDICESIMI;Colombia;Ghana
+2026-07-04;19:00;OTTAVI;Canada;Marocco
+2026-07-04;23:00;OTTAVI;Paraguay;Francia
+2026-07-05;22:00;OTTAVI;Brasile;Norvegia
+2026-07-06;02:00;OTTAVI;Messico;Inghilterra
+2026-07-06;21:00;OTTAVI;USA;Belgio
+2026-07-07;02:00;OTTAVI;TBD Home (Round of 16 #6);TBD Away (Round of 16 #6)
+2026-07-07;18:00;OTTAVI;TBD Home (Round of 16 #7);TBD Away (Round of 16 #7)
+2026-07-07;22:00;OTTAVI;TBD Home (Round of 16 #8);TBD Away (Round of 16 #8)
+2026-07-09;22:00;QUARTI;TBD Home (Quarter-finals #1);TBD Away (Quarter-finals #1)
+2026-07-10;21:00;QUARTI;TBD Home (Quarter-finals #2);TBD Away (Quarter-finals #2)
+2026-07-11;23:00;QUARTI;TBD Home (Quarter-finals #3);TBD Away (Quarter-finals #3)
+2026-07-12;03:00;QUARTI;TBD Home (Quarter-finals #4);TBD Away (Quarter-finals #4)
 2026-07-14;21:00;Semifinale;TBD Home (Semi-finals #1);TBD Away (Semi-finals #1)
 2026-07-15;21:00;Semifinale;TBD Home (Semi-finals #2);TBD Away (Semi-finals #2)
 2026-07-18;23:00;Finale 3 posto;TBD Home (3rd Place Final #1);TBD Away (3rd Place Final #1)
